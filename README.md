@@ -1,6 +1,6 @@
 # samba
 
-Servidor de arquivos via SMB, rodando no cluster k8s (`vm-ubuntu`, 192.168.0.5),
+Servidor de arquivos via SMB, rodando no cluster k8s (`vm-ubuntu`, 192.168.0.4),
 substituindo o TrueNAS que existia antes só pra isso. Serve o pool ZFS
 `diegofnunesbr`, criado direto no disco de 2TB em passthrough (sem TrueNAS
 por cima), com compressão LZ4 ligada.
@@ -112,7 +112,7 @@ sudo ls -la /var/lib/samba-config/private/   # confirma persistência do passdb
 
 ## Acesso
 
-Do Windows, `\\192.168.0.5\diegofnunesbr`, autenticando com o usuário
+Do Windows, `\\192.168.0.4\diegofnunesbr`, autenticando com o usuário
 `diegofnunesbr` e a senha configurada no secret.
 
 ## Trocar a senha depois
