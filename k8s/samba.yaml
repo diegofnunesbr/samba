@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: samba
+  namespace: samba
+  labels:
+    app: samba
+spec:
+  replicas: 1
+  # hostPath below is tied to this specific node's local disk - two pods
+  # touching it at once during a rollout makes no sense here (single-node
+  # cluster anyway, but this keeps it explicit).
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: samba
+  template:
+    metadata:
+      labels:
+        app: samba
+    spec:
+      # SMB clients (Windows Explorer) expect the standard port 445 - a
+      # NodePort would push that into the 30000+ range, so this uses the
+      # node's network directly instead.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: samba
+          image: samba/server:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SMB_USER
+              value: diegofnunesbr
+            - name: SMB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: samba-secrets
+                  key: smb-password
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: samba-config
+              mountPath: /var/lib/samba
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+      volumes:
+        # The ZFS pool "diegofnunesbr" lives directly on the node's disk
+        # (/dev/disk/by-id/nvme-ADATA...), mounted at this path by ZFS
+        # itself - not a k8s-managed volume.
+        - name: data
+          hostPath:
+            path: /diegofnunesbr
+            type: Directory
+        # Separate dataset from the shared data itself, so the Samba
+        # account database doesn't show up inside the SMB share.
+        - name: samba-config
+          hostPath:
+            path: /var/lib/samba-config
+            type: Directory
